@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>En espera</title>
+    <link rel="stylesheet" href="estilos.css" />
+    <style>
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: #0008;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      .modal.on {
+        display: flex;
+      }
+
+      .modal .caja {
+        margin: 0;
+        width: 100%;
+        max-width: 440px;
+      }
+
+      #log {
+        height: 240px;
+        overflow: auto;
+        border: 1px solid #ccd0d5;
+        border-radius: 8px;
+        padding: 8px;
+        margin: 10px 0;
+      }
+
+      .msg.usuario {
+        background: #dcfce7;
+        text-align: right;
+      }
+
+      #fila {
+        display: flex;
+        gap: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="caja">
+      <img src="image.png" alt="" style="width: 100%; height: auto" />
+      <h1>Tu solicitud está en revisión</h1>
+      <div class="estado pendiente">Esperando respuesta…</div>
+      <div class="spinner"></div>
+    </div>
+
+    <div class="modal" id="mError">
+      <div class="caja">
+        <h1>Error</h1>
+        <div class="estado rechazada" id="errTxt"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="mChat">
+      <div class="caja">
+        <h1>Chat con admin</h1>
+        <div id="log"></div>
+        <div id="fila">
+          <input
+            id="txt"
+            placeholder="Escribe un mensaje…"
+            maxlength="500"
+          /><button id="env">Enviar</button>
+        </div>
+        <small id="solo" style="display: none; color: #6b7280"
+          >Solo el administrador puede escribir por ahora.</small
+        >
+      </div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+      const email = localStorage.getItem("email");
+      if (!email) location.href = "/";
+      const $ = (i) => document.getElementById(i);
+      const $log = $("log"),
+        $txt = $("txt"),
+        $env = $("env");
+
+      function pintarMensaje(m) {
+        const d = document.createElement("div");
+        d.className = "msg " + (m.de || "admin");
+        d.textContent = m.texto; // textContent: evita inyección de HTML
+        $log.appendChild(d);
+        $log.scrollTop = $log.scrollHeight;
+      }
+      function chat({ chatAbierto, puedeEscribir, mensajes }) {
+        $("mChat").classList.toggle("on", chatAbierto);
+        $log.replaceChildren();
+        (mensajes || []).forEach(pintarMensaje);
+        $("fila").style.display = puedeEscribir ? "flex" : "none";
+        $("solo").style.display = puedeEscribir ? "none" : "block";
+      }
+      function accion(a) {
+        if (a.tipo === "error") {
+          $("errTxt").textContent = a.texto;
+          $("mError").classList.add("on");
+          setTimeout(() => (window.location = a.url), (a.segundos || 5) * 1000);
+        } else {
+          window.location = a.url;
+        }
+      }
+      async function enviar() {
+        const texto = $txt.value.trim();
+        if (!texto) return;
+        $txt.value = "";
+        await fetch(API_URL + "/api/chat/" + encodeURIComponent(email), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto }),
+        });
+      }
+      $env.onclick = enviar;
+      $txt.onkeydown = (e) => {
+        if (e.key === "Enter") enviar();
+      };
+
+      function conectar() {
+        const es = new EventSource(
+          API_URL + "/api/eventos/" + encodeURIComponent(email),
+        );
+        es.addEventListener("chat", (e) => chat(JSON.parse(e.data)));
+        es.addEventListener("mensaje", (e) =>
+          pintarMensaje(JSON.parse(e.data)),
+        );
+        es.addEventListener("accion", (e) => accion(JSON.parse(e.data)));
+        es.addEventListener("eliminada", () => {
+          es.close();
+          localStorage.removeItem("email");
+          location.href = "/";
+        });
+        // Si el servidor se reinició y perdió el email (404), se vuelve a registrar y se reconecta
+        es.onerror = () => {
+          if (es.readyState !== EventSource.CLOSED) return; // si no, EventSource reconecta solo
+          registrar().then((ok) =>
+            ok
+              ? setTimeout(conectar, 1000)
+              : (localStorage.removeItem("email"), (location.href = "/")),
+          );
+        };
+      }
+      // Crear/recuperar la solicitud (idempotente) antes de escuchar
+      async function registrar() {
+        try {
+          const r = await fetch(API_URL + "/api/solicitudes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+          return r.ok;
+        } catch {
+          return true;
+        } // sin red: reintentar
+      }
+      registrar().then((ok) =>
+        ok
+          ? conectar()
+          : (localStorage.removeItem("email"), (location.href = "/")),
+      );
+    </script>
+  </body>
+</html>

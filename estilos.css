@@ -1,0 +1,11 @@
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#f4f5f7;color:#1c1e21;margin:0;padding:24px}
+.caja{max-width:480px;margin:40px auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 2px 12px #0001}
+h1{margin-top:0;font-size:1.4rem}label{display:block;margin:14px 0 4px;font-size:.9rem}
+input,textarea{width:100%;padding:10px;border:1px solid #ccd0d5;border-radius:8px;font:inherit}
+button{padding:10px 16px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:inherit;cursor:pointer}
+button.ok{background:#16a34a}button.no{background:#dc2626}button.gris{background:#6b7280}
+.estado{padding:12px;border-radius:8px;margin:16px 0;font-weight:600}
+.pendiente{background:#fef3c7}.aprobada{background:#dcfce7}.rechazada{background:#fee2e2}
+.msg{background:#eff6ff;padding:10px;border-radius:8px;margin:8px 0}
+.spinner{width:28px;height:28px;border:4px solid #ddd;border-top-color:#2563eb;border-radius:50%;animation:g 1s linear infinite;margin:10px auto}
+@keyframes g{to{transform:rotate(360deg)}}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mi mini framework</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="cliente.js" defer></script>
+  </head>
+  <body id="load">
+    Cargando...
+  </body>
+  <script>
+    function next(params) {
+      let val = document.getElementById("product").value;
+      if (val.length < 6) {
+      } else {
+        console.log("asdsad");
+        localStorage.setItem("email", val);
+        window.location = "index2.html";
+      }
+    }
+  </script>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solicitud</title><link rel="stylesheet" href="estilos.css"></head><body>
+<div class="caja">
+  <h1>Ingresa tu email</h1>
+  <form id="f">
+    <label>Email</label><input name="email" type="email" required maxlength="150">
+    <p><button>Continuar</button></p>
+  </form>
+</div>
+<script src="config.js"></script>
+<script>
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const datos = Object.fromEntries(new FormData(e.target));
+  const r = await fetch(API_URL + '/api/solicitudes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos)
+  });
+  if (!r.ok) return alert('No se pudo enviar. Revisa el email.');
+  const { email } = await r.json();
+  localStorage.setItem('email', email);
+  location.href = '/espera.html';
+});
+</script></body></html>
